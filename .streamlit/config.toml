@@ -1,0 +1,7 @@
+[server]
+# 仅监听 localhost，不绑定 0.0.0.0，端口不对外暴露
+address = "localhost"
+headless = true
+
+[browser]
+gatherUsageStats = false

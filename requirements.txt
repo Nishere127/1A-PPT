@@ -1,0 +1,10 @@
+google-genai
+openai
+PyYAML
+python-pptx
+python-dotenv
+certifi
+fastapi
+uvicorn
+pypdf
+python-multipart

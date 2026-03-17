@@ -1,0 +1,16 @@
+# 复制为 config.yaml 后填写您自己的 API Key（勿提交 config.yaml，已加入 .gitignore）
+
+app:
+  name: "出图工具"
+
+# 出图 API：OpenAI DALL·E 或兼容 /v1/images/generations 的国内接口
+image:
+  api_key: ""
+  base_url: ""
+  model: ""
+
+llm:
+  api_key: ""
+  base_url: ""
+  model: ""
+  provider: "auto"

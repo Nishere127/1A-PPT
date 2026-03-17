@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 售前小助手</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f7f7f8; color: #0d0d0d; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 260px; background: #1e3a8a; color: #fff; padding: 1.25rem 0; flex-shrink: 0; }
+    .sidebar h2 { margin: 0 1rem 0.5rem; font-size: 1.1rem; font-weight: 600; }
+    .sidebar hr { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 0.75rem 1rem; }
+    .nav-item { display: block; padding: 0.6rem 1rem; color: #e2e8f0; text-decoration: none; font-size: 0.9rem; cursor: pointer; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .main { flex: 1; background: #ffffff; padding: 1.5rem 2rem; overflow: auto; }
+    .breadcrumb { padding: 0.5rem 0; margin-bottom: 1rem; font-size: 0.875rem; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+    .breadcrumb .sep { margin: 0 0.35rem; color: #94a3b8; }
+    .main h1 { margin: 0 0 1rem; font-size: 1.5rem; font-weight: 600; }
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06); padding: 1.5rem; margin: 1rem 0; border: 1px solid #e2e8f0; }
+    .card label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+    input[type="text"], textarea { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }
+    input[type="text"]:focus, textarea:focus { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,0.2); }
+    .btn { background: #1e3a8a; color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: 6px; font-size: 0.95rem; cursor: pointer; margin-top: 0.75rem; }
+    .btn:hover { background: #1e40af; }
+    .answer { margin-top: 1rem; padding: 1rem; background: #f0f9ff; border-left: 4px solid #1e3a8a; border-radius: 4px; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <h2>AI 售前小助手</h2>
+      <hr>
+      <a class="nav-item active" data-page="qa">我有关于 AI Docs 的问题要咨询</a>
+      <a class="nav-item" data-page="ppt">我要写关于 AI Docs 的解决方案 PPT</a>
+      <a class="nav-item" data-page="settings">系统设置</a>
+    </nav>
+    <main class="main">
+      <div class="breadcrumb" id="breadcrumb">首页 / 智能问答</div>
+      <h1 id="pageTitle">智能问答</h1>
+
+      <div id="page-qa" class="page active">
+        <div class="card">
+          <label for="question">请输入客户问题</label>
+          <input type="text" id="question" placeholder="请输入客户问题">
+          <button type="button" class="btn" id="btnAnswer">获取答案</button>
+          <div id="answerBox" class="answer" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div id="page-ppt" class="page">
+        <div class="card">
+          <label for="pptInput">方案需求描述</label>
+          <textarea id="pptInput" rows="4" placeholder="请描述您需要的解决方案 PPT 主题与要点"></textarea>
+          <button type="button" class="btn">生成方案 PPT</button>
+        </div>
+      </div>
+
+      <div id="page-settings" class="page">
+        <div class="card">
+          <h3 style="margin-top:0;">系统设置</h3>
+          <label for="apiKey">API 密钥</label>
+          <input type="password" id="apiKey" placeholder="可选：输入 API 密钥">
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      // 内置 3 篇文档（假数据）
+      var docs = [
+        { id: 1, title: "AI Docs 产品介绍", keywords: ["介绍","产品","功能","是什么","用途"], content: "AI Docs 是一款面向企业的智能文档助手，支持多格式解析、智能摘要与问答。主要功能包括：文档上传与解析、多轮对话问答、摘要生成、关键信息抽取，适用于知识库、合同与报表等场景。" },
+        { id: 2, title: "AI Docs 定价说明", keywords: ["定价","价格","费用","多少钱","套餐"], content: "AI Docs 提供三种套餐：基础版（适合小团队）、专业版（含 API 与更高额度）、企业版（定制与专属支持）。按调用量计费，新用户可享免费额度。具体价格请咨询商务。" },
+        { id: 3, title: "AI Docs 接入指南", keywords: ["接入","API","集成","开发","对接"], content: "接入 AI Docs 只需三步：1) 注册并获取 API Key；2) 调用文档上传接口传入文件；3) 使用会话接口进行问答。我们提供 REST API 与多种语言 SDK，文档与示例见开发者中心。" }
+      ];
+
+      var breadcrumbText = { qa: "首页 / 智能问答", ppt: "首页 / 方案生成", settings: "首页 / 系统设置" };
+      var titleText = { qa: "智能问答", ppt: "方案生成", settings: "系统设置" };
+
+      function showPage(pageId) {
+        document.querySelectorAll(".page").forEach(function(el) { el.classList.remove("active"); });
+        document.querySelectorAll(".nav-item").forEach(function(el) { el.classList.remove("active"); });
+        var pageEl = document.getElementById("page-" + pageId);
+        var navEl = document.querySelector(".nav-item[data-page='" + pageId + "']");
+        if (pageEl) pageEl.classList.add("active");
+        if (navEl) navEl.classList.add("active");
+        document.getElementById("breadcrumb").textContent = breadcrumbText[pageId] || "";
+        document.getElementById("pageTitle").textContent = titleText[pageId] || "";
+      }
+
+      document.querySelectorAll(".nav-item").forEach(function(el) {
+        el.addEventListener("click", function(e) {
+          e.preventDefault();
+          showPage(this.getAttribute("data-page"));
+        });
+      });
+
+      function matchDocs(query) {
+        var q = (query || "").trim().toLowerCase();
+        if (!q) return [];
+        var terms = q.split(/\s+/).filter(Boolean);
+        return docs.filter(function(d) {
+          var title = d.title.toLowerCase();
+          var content = d.content.toLowerCase();
+          var kw = d.keywords.join(" ").toLowerCase();
+          return terms.some(function(t) {
+            return title.indexOf(t) >= 0 || content.indexOf(t) >= 0 || kw.indexOf(t) >= 0;
+          });
+        });
+      }
+
+      var answerBox = document.getElementById("answerBox");
+      var questionInput = document.getElementById("question");
+      document.getElementById("btnAnswer").addEventListener("click", function() {
+        var question = questionInput.value.trim();
+        var matched = matchDocs(question);
+        var text = "这是 AI 的回答：";
+        if (matched.length > 0) {
+          text += "\n\n" + matched.map(function(d) { return "【" + d.title + "】\n" + d.content; }).join("\n\n");
+        } else {
+          text += "\n\n未找到与「" + question + "」相关的文档。可尝试输入：介绍、定价、接入、产品、API 等关键词。";
+        }
+        answerBox.textContent = text;
+        answerBox.style.display = "block";
+      });
+    })();
+  </script>
+</body>
+</html>
